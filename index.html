@@ -1,497 +1,578 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 
-<meta name="theme-color" content="#2563eb">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-<title>Moore to Mealy Converter</title>
+    <meta name="theme-color" content="#2563eb">
+
+    <meta name="description"
+          content="Moore to Mealy Machine Converter">
+
+    <title>Moore to Mealy Converter</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header class="topbar">
+    <!-- ================= HEADER ================= -->
 
-    <div class="brand">
-        <div class="brand-icon">M↔</div>
+    <header class="header">
 
-        <div>
-            <div class="eyebrow">THEORY OF COMPUTATION</div>
-            <h1>Moore to Mealy Converter</h1>
-        </div>
-    </div>
+        <div class="header-content">
 
-    <nav>
-        <a href="#input">Input</a>
-        <a href="#moore-table">Moore</a>
-        <a href="#convert">Convert</a>
-        <a href="#mealy-table">Mealy</a>
+            <div class="logo-section">
+                <div class="logo">⚙️</div>
 
-        <!-- INSTALL APP BUTTON -->
-        <button id="installBtn" class="install">
-            📲 Install App
-        </button>
-    </nav>
+                <div>
+                    <h1>Moore to Mealy Converter</h1>
+                    <p>Convert Moore Machine into Mealy Machine</p>
+                </div>
+            </div>
 
-</header>
+            <!-- PWA INSTALL BUTTON -->
+            <button id="installBtn"
+                    class="install-btn"
+                    style="display:none;">
+                📲 Install App
+            </button>
 
-
-<main>
-
-<!-- HERO -->
-<section class="hero">
-
-    <div>
-
-        <span class="pill">FINITE AUTOMATA TOOL</span>
-
-        <h2>
-            Moore Machine <span>→</span> Mealy Machine
-        </h2>
-
-        <p>
-            Enter a Moore machine and follow the complete conversion
-            flow from input to tables and diagrams.
-        </p>
-
-    </div>
-
-
-    <div class="hero-card">
-
-        <div>
-            <b>Moore</b>
-            <small>Output on states</small>
         </div>
 
-        <strong>→</strong>
-
-        <div>
-            <b>Mealy</b>
-            <small>Output on transitions</small>
-        </div>
-
-    </div>
-
-</section>
+    </header>
 
 
-<!-- FLOW -->
-<div class="flow">
+    <!-- ================= MAIN ================= -->
 
-    <div class="flow-item active">
-        <span>1</span>
-        <b>MOORE INPUT</b>
-    </div>
+    <main class="container">
 
-    <i>→</i>
+        <!-- Introduction -->
 
-    <div class="flow-item">
-        <span>2</span>
-        <b>MOORE TABLE</b>
-    </div>
+        <section class="intro-section">
 
-    <i>→</i>
-
-    <div class="flow-item">
-        <span>3</span>
-        <b>MOORE DIAGRAM</b>
-    </div>
-
-    <i>→</i>
-
-    <div class="flow-item convert-flow">
-        <span>4</span>
-        <b>CONVERT</b>
-    </div>
-
-    <i>→</i>
-
-    <div class="flow-item">
-        <span>5</span>
-        <b>MEALY TABLE</b>
-    </div>
-
-    <i>→</i>
-
-    <div class="flow-item">
-        <span>6</span>
-        <b>MEALY DIAGRAM</b>
-    </div>
-
-</div>
-
-
-<!-- MOORE INPUT -->
-<section id="input" class="card">
-
-    <div class="section-head">
-
-        <div>
-
-            <span class="number">01</span>
-
-            <h3>MOORE INPUT</h3>
+            <h2>Moore → Mealy Machine</h2>
 
             <p>
-                Enter states, input symbols, start state,
-                outputs and transitions.
+                Enter the states, input symbols, output values and
+                transition information of a Moore machine.
+                The system will automatically generate the Moore table,
+                Moore diagram, Mealy table and Mealy diagram.
             </p>
 
-        </div>
-
-    </div>
+        </section>
 
 
-    <div class="grid two">
+        <!-- ================= INPUT SECTION ================= -->
 
-        <label>
-            States
-            <input id="states" value="q0,q1,q2">
-        </label>
+        <section class="card">
 
+            <div class="card-header">
 
-        <label>
-            Input Symbols
-            <input id="symbols" value="0,1">
-        </label>
+                <h2>1. Moore Machine Input</h2>
 
+                <p>
+                    Enter the required information to define your
+                    Moore machine.
+                </p>
 
-        <label>
-            Start State
-            <input id="start" value="q0">
-        </label>
+            </div>
 
 
-        <label>
-            State Outputs
-            <input id="outputs" value="q0:0,q1:1,q2:0">
-        </label>
+            <div class="form-grid">
 
-    </div>
+                <!-- States -->
+
+                <div class="form-group">
+
+                    <label for="states">
+                        States
+                    </label>
+
+                    <input
+                        type="text"
+                        id="states"
+                        placeholder="Example: q0,q1,q2"
+                    >
+
+                    <small>
+                        Enter states separated by commas.
+                    </small>
+
+                </div>
 
 
-    <label class="wide">
+                <!-- Input Symbols -->
 
-        Transition Rules
+                <div class="form-group">
 
-        <span class="hint">
-            One per line: current state, input, next state
-        </span>
+                    <label for="symbols">
+                        Input Symbols
+                    </label>
 
-        <textarea id="transitions" rows="6">q0,0,q1
+                    <input
+                        type="text"
+                        id="symbols"
+                        placeholder="Example: 0,1"
+                    >
+
+                    <small>
+                        Enter input symbols separated by commas.
+                    </small>
+
+                </div>
+
+
+                <!-- Start State -->
+
+                <div class="form-group">
+
+                    <label for="start">
+                        Start State
+                    </label>
+
+                    <input
+                        type="text"
+                        id="start"
+                        placeholder="Example: q0"
+                    >
+
+                </div>
+
+
+                <!-- Outputs -->
+
+                <div class="form-group">
+
+                    <label for="outputs">
+                        Moore Outputs
+                    </label>
+
+                    <input
+                        type="text"
+                        id="outputs"
+                        placeholder="Example: q0=0,q1=1,q2=0"
+                    >
+
+                    <small>
+                        Define output for every state.
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- Transitions -->
+
+            <div class="form-group full-width">
+
+                <label for="transitions">
+                    Transitions
+                </label>
+
+                <textarea
+                    id="transitions"
+                    rows="6"
+                    placeholder="Example:
+q0,0,q1
 q0,1,q2
 q1,0,q1
 q1,1,q2
 q2,0,q0
-q2,1,q1</textarea>
+q2,1,q1"></textarea>
 
-    </label>
+                <small>
+                    Enter one transition per line:
+                    current state, input, next state
+                </small>
 
-
-    <div class="actions">
-
-        <button id="generate" class="primary">
-            Generate Moore Machine →
-        </button>
-
-        <button id="sample" class="secondary">
-            Load Sample
-        </button>
-
-        <button id="reset" class="ghost">
-            Reset
-        </button>
-
-    </div>
+            </div>
 
 
-    <div id="error" class="error hidden"></div>
+            <!-- Buttons -->
 
-</section>
+            <div class="button-group">
 
+                <button
+                    id="generate"
+                    class="primary-btn">
+                    Generate Moore Machine
+                </button>
 
-<!-- MOORE TABLE -->
-<section id="moore-table" class="card result hidden">
+                <button
+                    id="sample"
+                    class="secondary-btn">
+                    Load Sample
+                </button>
 
-    <div class="section-head">
+                <button
+                    id="reset"
+                    class="danger-btn">
+                    Reset
+                </button>
 
-        <div>
-
-            <span class="number">02</span>
-
-            <h3>MOORE TABLE</h3>
-
-            <p>
-                Each Moore state has its own output.
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <div id="mooreTable" class="table-wrap"></div>
-
-</section>
+            </div>
 
 
-<!-- MOORE DIAGRAM -->
-<section id="moore-diagram" class="card result hidden">
+            <!-- Error -->
 
-    <div class="section-head">
+            <div
+                id="error"
+                class="error-message"
+                style="display:none;">
+            </div>
 
-        <div>
-
-            <span class="number">03</span>
-
-            <h3>MOORE DIAGRAM</h3>
-
-            <p>
-                State labels are shown as
-                <b>state / output</b>.
-            </p>
-
-        </div>
-
-    </div>
+        </section>
 
 
-    <div id="mooreDiagram" class="diagram"></div>
+        <!-- ================= MOORE SECTION ================= -->
 
-</section>
+        <section class="card">
+
+            <div class="card-header">
+
+                <h2>2. Moore Machine</h2>
+
+                <p>
+                    Generated Moore machine table and diagram.
+                </p>
+
+            </div>
 
 
-<!-- CONVERT -->
-<section id="convert" class="convert-card result hidden">
+            <!-- Moore Table -->
 
-    <div>
+            <div class="output-section">
 
-        <span class="number">04</span>
+                <h3>Moore Transition Table</h3>
 
-        <h3>CONVERT MOORE → MEALY</h3>
+                <div
+                    id="mooreTable"
+                    class="table-container">
+
+                    <p class="placeholder">
+                        Generate the Moore machine to view the table.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Moore Diagram -->
+
+            <div class="output-section">
+
+                <h3>Moore State Diagram</h3>
+
+                <div
+                    id="mooreDiagram"
+                    class="diagram-container">
+
+                    <p class="placeholder">
+                        Generate the Moore machine to view the diagram.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CONVERT SECTION ================= -->
+
+        <section class="conversion-section">
+
+            <div class="conversion-content">
+
+                <div class="conversion-icon">
+                    🔄
+                </div>
+
+                <div>
+
+                    <h2>Convert Moore → Mealy</h2>
+
+                    <p>
+                        Convert the Moore machine into an equivalent
+                        Mealy machine using the transition-based
+                        output conversion.
+                    </p>
+
+                </div>
+
+                <button
+                    id="convertBtn"
+                    class="convert-btn">
+                    Convert to Mealy
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= MEALY SECTION ================= -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <h2>3. Mealy Machine</h2>
+
+                <p>
+                    Equivalent Mealy machine generated from the
+                    Moore machine.
+                </p>
+
+            </div>
+
+
+            <!-- Conversion Note -->
+
+            <div
+                id="conversionNote"
+                class="info-message"
+                style="display:none;">
+            </div>
+
+
+            <!-- Mealy Table -->
+
+            <div class="output-section">
+
+                <h3>Mealy Transition Table</h3>
+
+                <div
+                    id="mealyTable"
+                    class="table-container">
+
+                    <p class="placeholder">
+                        Convert the Moore machine to view the
+                        Mealy table.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Mealy Diagram -->
+
+            <div class="output-section">
+
+                <h3>Mealy State Diagram</h3>
+
+                <div
+                    id="mealyDiagram"
+                    class="diagram-container">
+
+                    <p class="placeholder">
+                        Convert the Moore machine to view the
+                        Mealy diagram.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= SUMMARY ================= -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <h2>4. Conversion Summary</h2>
+
+            </div>
+
+            <div
+                id="summary"
+                class="summary-box">
+
+                <p>
+                    Enter a Moore machine and click
+                    <strong>Convert to Mealy</strong>
+                    to see the conversion summary.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= INPUT PREVIEW ================= -->
+
+        <section
+            id="input"
+            class="card"
+            style="display:none;">
+
+            <div class="card-header">
+
+                <h2>Machine Input</h2>
+
+            </div>
+
+            <div id="inputContent"></div>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer class="footer">
 
         <p>
-            For every transition, attach the output
-            of the destination state.
+            Moore to Mealy Converter
         </p>
 
-    </div>
+        <p>
+            Automata Theory &amp; Formal Languages
+        </p>
 
+    </footer>
 
-    <button id="convertBtn" class="convert-btn">
-        ⚡ CONVERT TO MEALY
-    </button>
 
+    <!-- ================= JAVASCRIPT ================= -->
 
-    <div id="conversionNote" class="conversion-note"></div>
+    <script src="script.js"></script>
 
-</section>
 
+    <!-- ================= SERVICE WORKER ================= -->
 
-<!-- MEALY TABLE -->
-<section id="mealy-table" class="card result hidden">
+    <script>
 
-    <div class="section-head">
+        if ("serviceWorker" in navigator) {
 
-        <div>
+            window.addEventListener("load", function () {
 
-            <span class="number">05</span>
+                navigator.serviceWorker
+                    .register("sw.js")
+                    .then(function () {
 
-            <h3>MEALY TABLE</h3>
+                        console.log(
+                            "Service Worker registered successfully."
+                        );
 
-            <p>
-                Each transition now contains
-                <b>next state / output</b>.
-            </p>
+                    })
+                    .catch(function (error) {
 
-        </div>
+                        console.log(
+                            "Service Worker registration failed:",
+                            error
+                        );
 
+                    });
 
-        <div id="summary" class="summary"></div>
-
-    </div>
-
-
-    <div id="mealyTable" class="table-wrap"></div>
-
-</section>
-
-
-<!-- MEALY DIAGRAM -->
-<section id="mealy-diagram" class="card result hidden">
-
-    <div class="section-head">
-
-        <div>
-
-            <span class="number">06</span>
-
-            <h3>MEALY DIAGRAM</h3>
-
-            <p>
-                Edge labels are shown as
-                <b>input / output</b>.
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <div id="mealyDiagram" class="diagram"></div>
-
-</section>
-
-
-<!-- THEORY -->
-<section class="card theory">
-
-    <div class="section-head">
-
-        <div>
-            <h3>Conversion Rule</h3>
-        </div>
-
-    </div>
-
-
-    <div class="theory-grid">
-
-        <div>
-
-            <h4>Moore</h4>
-
-            <p>
-                Output depends only on the current state.
-            </p>
-
-        </div>
-
-
-        <div>
-
-            <h4>Mealy</h4>
-
-            <p>
-                Output is placed on transitions and depends
-                on state + input.
-            </p>
-
-        </div>
-
-
-        <div>
-
-            <h4>Rule</h4>
-
-            <p>
-                If <b>A -- x → B</b> and B has output
-                <b>y</b>, then Mealy transition is
-                <b>A -- x/y → B</b>.
-            </p>
-
-        </div>
-
-    </div>
-
-</section>
-
-</main>
-
-
-<footer>
-    Moore to Mealy Converter • Theory of Computation • Educational Tool
-</footer>
-
-
-<!-- EXISTING APPLICATION LOGIC -->
-<script src="script.js"></script>
-
-
-<!-- INSTALL APP LOGIC -->
-<script>
-
-let deferredInstallPrompt = null;
-
-const installBtn = document.getElementById("installBtn");
-
-
-// Chrome sends this event when the PWA can be installed
-window.addEventListener("beforeinstallprompt", (event) => {
-
-    event.preventDefault();
-
-    deferredInstallPrompt = event;
-
-    installBtn.classList.remove("hidden");
-
-});
-
-
-// Install button
-installBtn.addEventListener("click", async () => {
-
-    if (!deferredInstallPrompt) {
-
-        alert(
-            "App installation is currently not available. " +
-            "Please open this website in Chrome over HTTPS."
-        );
-
-        return;
-    }
-
-
-    deferredInstallPrompt.prompt();
-
-
-    const result =
-        await deferredInstallPrompt.userChoice;
-
-
-    if (result.outcome === "accepted") {
-
-        installBtn.classList.add("hidden");
-
-    }
-
-
-    deferredInstallPrompt = null;
-
-});
-
-
-// Hide button after installation
-window.addEventListener("appinstalled", () => {
-
-    installBtn.classList.add("hidden");
-
-});
-
-
-// Register service worker
-if ("serviceWorker" in navigator) {
-
-    window.addEventListener("load", () => {
-
-        navigator.serviceWorker
-            .register("./sw.js")
-            .catch((error) => {
-                console.error(
-                    "Service Worker registration failed:",
-                    error
-                );
             });
 
-    });
+        }
 
-}
+    </script>
 
-</script>
+
+    <!-- ================= PWA INSTALL ================= -->
+
+    <script>
+
+        let deferredPrompt;
+
+        const installBtn =
+            document.getElementById("installBtn");
+
+
+        window.addEventListener(
+            "beforeinstallprompt",
+            function (event) {
+
+                event.preventDefault();
+
+                deferredPrompt = event;
+
+                if (installBtn) {
+                    installBtn.style.display =
+                        "inline-block";
+                }
+
+            }
+        );
+
+
+        if (installBtn) {
+
+            installBtn.addEventListener(
+                "click",
+                async function () {
+
+                    if (!deferredPrompt) {
+
+                        alert(
+                            "Install option is not available yet. Please open this website in Chrome or Edge."
+                        );
+
+                        return;
+                    }
+
+
+                    deferredPrompt.prompt();
+
+
+                    const choice =
+                        await deferredPrompt.userChoice;
+
+
+                    if (
+                        choice.outcome === "accepted"
+                    ) {
+
+                        installBtn.style.display =
+                            "none";
+
+                    }
+
+
+                    deferredPrompt = null;
+
+                }
+            );
+
+        }
+
+
+        window.addEventListener(
+            "appinstalled",
+            function () {
+
+                if (installBtn) {
+
+                    installBtn.style.display =
+                        "none";
+
+                }
+
+                console.log(
+                    "Moore to Mealy Converter installed."
+                );
+
+            }
+        );
+
+    </script>
 
 </body>
 </html>
