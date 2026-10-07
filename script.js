@@ -1,231 +1,1412 @@
-const $ = (id) => document.getElementById(id);
+/* =========================================================
+   MOORE TO MEALY CONVERTER
+   Complete script.js
+   ========================================================= */
+
+
+/* =========================
+   SAMPLE DATA
+   ========================= */
 
 const SAMPLE = {
-  states: 'q0,q1,q2',
-  symbols: '0,1',
-  start: 'q0',
-  outputs: 'q0:0,q1:1,q2:0',
-  transitions: 'q0,0,q1\nq0,1,q2\nq1,0,q1\nq1,1,q2\nq2,0,q0\nq2,1,q1'
+    states: ["q0", "q1", "q2"],
+
+    symbols: ["0", "1"],
+
+    start: "q0",
+
+    outputs: {
+        q0: "0",
+        q1: "1",
+        q2: "0"
+    },
+
+    transitions: {
+        q0: {
+            "0": "q1",
+            "1": "q2"
+        },
+
+        q1: {
+            "0": "q1",
+            "1": "q2"
+        },
+
+        q2: {
+            "0": "q0",
+            "1": "q1"
+        }
+    }
 };
 
-let machine = null;
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+/* =========================
+   GET ELEMENTS
+   ========================= */
+
+const statesInput =
+    document.getElementById("states");
+
+const symbolsInput =
+    document.getElementById("symbols");
+
+const startInput =
+    document.getElementById("start");
+
+const outputsInput =
+    document.getElementById("outputs");
+
+const transitionsInput =
+    document.getElementById("transitions");
+
+const generateBtn =
+    document.getElementById("generate");
+
+const convertBtn =
+    document.getElementById("convertBtn");
+
+const sampleBtn =
+    document.getElementById("sample");
+
+const resetBtn =
+    document.getElementById("reset");
+
+const errorBox =
+    document.getElementById("error");
+
+const mooreTable =
+    document.getElementById("mooreTable");
+
+const mooreDiagram =
+    document.getElementById("mooreDiagram");
+
+const mealyTable =
+    document.getElementById("mealyTable");
+
+const mealyDiagram =
+    document.getElementById("mealyDiagram");
+
+const conversionNote =
+    document.getElementById("conversionNote");
+
+const summary =
+    document.getElementById("summary");
+
+
+/* =========================
+   CURRENT MACHINE
+   ========================= */
+
+let currentMachine = null;
+let currentMealy = null;
+
+
+/* =========================
+   SHOW ERROR
+   ========================= */
+
+function showError(message) {
+
+    if (!errorBox) return;
+
+    errorBox.textContent = message;
+
+    errorBox.style.display = "block";
 }
+
+
+/* =========================
+   HIDE ERROR
+   ========================= */
+
+function hideError() {
+
+    if (!errorBox) return;
+
+    errorBox.textContent = "";
+
+    errorBox.style.display = "none";
+}
+
+
+/* =========================
+   PARSE LIST
+   ========================= */
 
 function parseList(value) {
-  return value.split(',').map(v => v.trim()).filter(Boolean);
+
+    return value
+        .split(",")
+        .map(item => item.trim())
+        .filter(item => item !== "");
 }
 
-function parseMachine() {
-  const states = parseList($('states').value);
-  const symbols = parseList($('symbols').value);
-  const start = $('start').value.trim();
-  const outputs = {};
-  const transitions = {};
 
-  if (!states.length) throw new Error('Enter at least one state.');
-  if (!symbols.length) throw new Error('Enter at least one input symbol.');
-  if (!start) throw new Error('Enter a start state.');
-  if (!states.includes(start)) throw new Error('Start state must be one of the listed states.');
-  if (new Set(states).size !== states.length) throw new Error('Duplicate states are not allowed.');
-  if (new Set(symbols).size !== symbols.length) throw new Error('Duplicate input symbols are not allowed.');
+/* =========================
+   PARSE OUTPUTS
+   ========================= */
 
-  parseList($('outputs').value).forEach(item => {
-    const parts = item.split(':');
-    if (parts.length < 2) throw new Error('Output format must be state:output.');
-    const state = parts[0].trim();
-    const output = parts.slice(1).join(':').trim();
-    if (!states.includes(state)) throw new Error(`Output contains unknown state: ${state}`);
-    outputs[state] = output;
-  });
+function parseOutputs(value) {
 
-  states.forEach(state => {
-    if (outputs[state] === undefined || outputs[state] === '') {
-      throw new Error(`Missing output for state ${state}.`);
-    }
-    transitions[state] = {};
-  });
+    const outputs = {};
 
-  const rows = $('transitions').value.split(/\n|;/).map(v => v.trim()).filter(Boolean);
-  if (!rows.length) throw new Error('Enter transition rules.');
+    const parts = value
+        .split(",")
+        .map(item => item.trim())
+        .filter(item => item !== "");
 
-  rows.forEach(row => {
-    const parts = row.split(',').map(v => v.trim());
-    if (parts.length !== 3) throw new Error(`Invalid transition: ${row}. Use state,input,nextState.`);
-    const [from, input, to] = parts;
-    if (!states.includes(from)) throw new Error(`Unknown source state: ${from}`);
-    if (!symbols.includes(input)) throw new Error(`Unknown input symbol: ${input}`);
-    if (!states.includes(to)) throw new Error(`Unknown destination state: ${to}`);
-    if (transitions[from][input] !== undefined) throw new Error(`Duplicate transition for ${from} with input ${input}.`);
-    transitions[from][input] = to;
-  });
+    parts.forEach(part => {
 
-  states.forEach(state => symbols.forEach(input => {
-    if (transitions[state][input] === undefined) {
-      throw new Error(`Missing transition for ${state} with input ${input}.`);
-    }
-  }));
+        const pieces = part.split("=");
 
-  return { states, symbols, start, outputs, transitions };
-}
+        if (pieces.length === 2) {
 
-function markFlow(step) {
-  document.querySelectorAll('.flow-item').forEach((item, index) => {
-    item.classList.toggle('active', index === step - 1);
-    item.classList.toggle('done', index < step);
-  });
-}
+            const state =
+                pieces[0].trim();
 
-function renderMooreTable(m) {
-  let html = '<table><thead><tr><th>State</th>';
-  m.symbols.forEach(s => html += `<th>Input ${escapeHtml(s)}</th>`);
-  html += '<th>Output</th></tr></thead><tbody>';
-  m.states.forEach(state => {
-    html += `<tr><td class="state">${escapeHtml(state)}${state === m.start ? ' <span class="start-star">★</span>' : ''}</td>`;
-    m.symbols.forEach(input => html += `<td>${escapeHtml(m.transitions[state][input])}</td>`);
-    html += `<td><span class="out">${escapeHtml(m.outputs[state])}</span></td></tr>`;
-  });
-  html += '</tbody></table>';
-  $('mooreTable').innerHTML = html;
-}
+            const output =
+                pieces[1].trim();
 
-function renderMealyTable(m) {
-  let html = '<table><thead><tr><th>State</th>';
-  m.symbols.forEach(s => html += `<th>Input ${escapeHtml(s)}</th>`);
-  html += '</tr></thead><tbody>';
-  m.states.forEach(state => {
-    html += `<tr><td class="state">${escapeHtml(state)}${state === m.start ? ' <span class="start-star">★</span>' : ''}</td>`;
-    m.symbols.forEach(input => {
-      const next = m.transitions[state][input];
-      html += `<td>${escapeHtml(next)} <span class="slash">/</span> <span class="out">${escapeHtml(m.outputs[next])}</span></td>`;
-    });
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  $('mealyTable').innerHTML = html;
-}
-
-function show(id) { $(id).classList.remove('hidden'); }
-function hide(id) { $(id).classList.add('hidden'); }
-
-function makeDiagram(m, isMealy) {
-  const width = 980, height = 470;
-  const centerX = width / 2, centerY = height / 2;
-  const radius = Math.min(175, 85 + m.states.length * 14);
-  const points = {};
-
-  m.states.forEach((state, i) => {
-    const angle = -Math.PI / 2 + (i * 2 * Math.PI / m.states.length);
-    points[state] = { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) };
-  });
-
-  const markerId = isMealy ? 'arrowMealy' : 'arrowMoore';
-  let svg = `<svg class="machine-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${isMealy ? 'Mealy' : 'Moore'} machine diagram">
-    <defs><marker id="${markerId}" markerWidth="10" markerHeight="10" refX="9" refY="4" orient="auto"><path d="M0,0 L0,8 L10,4 z" fill="#64748b"></path></marker></defs>`;
-
-  const seen = new Set();
-  m.states.forEach(from => {
-    m.symbols.forEach(input => {
-      const to = m.transitions[from][input];
-      const p = points[from], q = points[to];
-      const label = isMealy ? `${input} / ${m.outputs[to]}` : input;
-      if (from === to) {
-        const key = `${from}-loop`;
-        const y = p.y - 36;
-        svg += `<path class="edge" marker-end="url(#${markerId})" d="M ${p.x-25} ${p.y-24} C ${p.x-85} ${p.y-105}, ${p.x+85} ${p.y-105}, ${p.x+25} ${p.y-24}"></path>`;
-        if (!seen.has(key)) {
-          svg += `<text class="edge-label" x="${p.x}" y="${y-52}" text-anchor="middle">${escapeHtml(label)}</text>`;
-          seen.add(key);
+            outputs[state] = output;
         }
-        return;
-      }
-      const dx = q.x-p.x, dy = q.y-p.y, len = Math.hypot(dx,dy) || 1;
-      const ux = dx/len, uy = dy/len;
-      const px = -uy, py = ux;
-      const offset = (from < to ? 10 : -10);
-      const sx = p.x + ux*39, sy = p.y + uy*39;
-      const ex = q.x - ux*39, ey = q.y - uy*39;
-      const mx = (sx+ex)/2 + px*offset, my = (sy+ey)/2 + py*offset;
-      svg += `<line class="edge" marker-end="url(#${markerId})" x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}"></line>`;
-      svg += `<text class="edge-label" x="${mx}" y="${my-8}" text-anchor="middle">${escapeHtml(label)}</text>`;
+
     });
-  });
 
-  m.states.forEach(state => {
-    const p = points[state];
-    const fill = state === m.start ? ' node-start' : '';
-    const text = isMealy ? state : `${state} / ${m.outputs[state]}`;
-    svg += `<circle class="node${fill}" cx="${p.x}" cy="${p.y}" r="39"></circle>`;
-    svg += `<text class="node-text" x="${p.x}" y="${p.y+5}" text-anchor="middle">${escapeHtml(text)}</text>`;
-  });
-
-  const startPoint = points[m.start];
-  svg += `<line class="start-line" x1="${startPoint.x-90}" y1="${startPoint.y}" x2="${startPoint.x-43}" y2="${startPoint.y}" marker-end="url(#${markerId})"></line>`;
-  svg += `<text class="start-label" x="${startPoint.x-94}" y="${startPoint.y-12}" text-anchor="end">START</text>`;
-  svg += '</svg>';
-  return svg;
+    return outputs;
 }
+
+
+/* =========================
+   PARSE TRANSITIONS
+   ========================= */
+
+function parseTransitions(value) {
+
+    const transitions = {};
+
+    const lines = value
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line !== "");
+
+    lines.forEach(line => {
+
+        const parts = line
+            .split(",")
+            .map(item => item.trim());
+
+        if (parts.length !== 3) {
+            return;
+        }
+
+        const from = parts[0];
+        const input = parts[1];
+        const to = parts[2];
+
+        if (!transitions[from]) {
+            transitions[from] = {};
+        }
+
+        transitions[from][input] = to;
+
+    });
+
+    return transitions;
+}
+
+
+/* =========================
+   READ INPUT
+   ========================= */
+
+function readMachine() {
+
+    hideError();
+
+    const states =
+        parseList(statesInput.value);
+
+    const symbols =
+        parseList(symbolsInput.value);
+
+    const start =
+        startInput.value.trim();
+
+    const outputs =
+        parseOutputs(outputsInput.value);
+
+    const transitions =
+        parseTransitions(transitionsInput.value);
+
+
+    /* Validation */
+
+    if (states.length === 0) {
+
+        showError("Please enter at least one state.");
+
+        return null;
+    }
+
+
+    if (symbols.length === 0) {
+
+        showError("Please enter at least one input symbol.");
+
+        return null;
+    }
+
+
+    if (!start) {
+
+        showError("Please enter the start state.");
+
+        return null;
+    }
+
+
+    if (!states.includes(start)) {
+
+        showError(
+            "Start state must be one of the entered states."
+        );
+
+        return null;
+    }
+
+
+    for (const state of states) {
+
+        if (outputs[state] === undefined) {
+
+            showError(
+                "Please provide an output for state " + state
+            );
+
+            return null;
+        }
+
+    }
+
+
+    for (const state of states) {
+
+        if (!transitions[state]) {
+
+            showError(
+                "Missing transitions for state " + state
+            );
+
+            return null;
+        }
+
+
+        for (const symbol of symbols) {
+
+            if (
+                transitions[state][symbol] === undefined
+            ) {
+
+                showError(
+                    `Missing transition for ${state} on input ${symbol}.`
+                );
+
+                return null;
+            }
+
+
+            const destination =
+                transitions[state][symbol];
+
+            if (!states.includes(destination)) {
+
+                showError(
+                    `Invalid destination state ${destination}.`
+                );
+
+                return null;
+            }
+
+        }
+
+    }
+
+
+    return {
+        states,
+        symbols,
+        start,
+        outputs,
+        transitions
+    };
+}
+
+
+/* =========================
+   GENERATE MACHINE
+   ========================= */
 
 function generate() {
-  try {
-    machine = parseMachine();
-    hide('error');
+
+    const machine = readMachine();
+
+    if (!machine) {
+        return;
+    }
+
+    currentMachine = machine;
+
     renderMooreTable(machine);
-    $('mooreDiagram').innerHTML = makeDiagram(machine, false);
-    show('moore-table'); show('moore-diagram'); show('convert');
-    hide('mealy-table'); hide('mealy-diagram');
-    $('conversionNote').textContent = '';
-    $('summary').textContent = '';
-    markFlow(3);
-    $('moore-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (err) {
-    $('error').textContent = err.message;
-    show('error');
-  }
+
+    renderMooreDiagram(machine);
+
+    mealyTable.innerHTML = `
+        <p class="placeholder">
+            Click "Convert to Mealy" to generate the Mealy table.
+        </p>
+    `;
+
+    mealyDiagram.innerHTML = `
+        <p class="placeholder">
+            Click "Convert to Mealy" to generate the Mealy diagram.
+        </p>
+    `;
+
+    if (conversionNote) {
+        conversionNote.style.display = "none";
+        conversionNote.innerHTML = "";
+    }
+
+    if (summary) {
+        summary.innerHTML = `
+            <p>
+                Moore machine generated successfully.
+                Click <strong>Convert to Mealy</strong>
+                to perform the conversion.
+            </p>
+        `;
+    }
+
+    const inputSection =
+        document.getElementById("input");
+
+    if (inputSection) {
+        inputSection.style.display = "block";
+    }
 }
 
-function convert() {
-  if (!machine) {
-    $('error').textContent = 'Generate the Moore machine first.';
-    show('error');
-    return;
-  }
-  renderMealyTable(machine);
-  $('mealyDiagram').innerHTML = makeDiagram(machine, true);
-  show('mealy-table'); show('mealy-diagram');
-  $('summary').textContent = `${machine.states.length} states • ${machine.symbols.length} inputs • ${machine.states.length * machine.symbols.length} transitions`;
-  $('conversionNote').innerHTML = '✓ Conversion complete: for every transition <b>qᵢ -- input → qⱼ</b>, the Mealy output is the output of destination state <b>qⱼ</b>.';
-  markFlow(6);
-  $('mealy-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+/* =========================
+   MOORE TABLE
+   ========================= */
+
+function renderMooreTable(machine) {
+
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+    `;
+
+    machine.symbols.forEach(symbol => {
+
+        html += `
+            <th>Input ${escapeHTML(symbol)}</th>
+        `;
+
+    });
+
+    html += `
+                    <th>Output</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+
+    machine.states.forEach(state => {
+
+        html += `
+            <tr>
+                <td>
+                    <strong>${escapeHTML(state)}</strong>
+                </td>
+        `;
+
+
+        machine.symbols.forEach(symbol => {
+
+            const nextState =
+                machine.transitions[state][symbol];
+
+            html += `
+                <td>
+                    ${escapeHTML(nextState)}
+                </td>
+            `;
+
+        });
+
+
+        html += `
+                <td>
+                    <strong>
+                        ${escapeHTML(machine.outputs[state])}
+                    </strong>
+                </td>
+            </tr>
+        `;
+
+    });
+
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    mooreTable.innerHTML = html;
 }
 
-function fillSample() {
-  Object.entries(SAMPLE).forEach(([key, value]) => $(key).value = value);
-  generate();
+
+/* =========================
+   CONVERT MOORE TO MEALY
+   ========================= */
+
+function convertToMealy() {
+
+    if (!currentMachine) {
+
+        showError(
+            "Please generate the Moore machine first."
+        );
+
+        return;
+    }
+
+    hideError();
+
+    const machine = currentMachine;
+
+    const mealy = {
+        states: [...machine.states],
+        symbols: [...machine.symbols],
+        start: machine.start,
+        transitions: {}
+    };
+
+
+    machine.states.forEach(state => {
+
+        mealy.transitions[state] = {};
+
+        machine.symbols.forEach(symbol => {
+
+            const nextState =
+                machine.transitions[state][symbol];
+
+            const output =
+                machine.outputs[nextState];
+
+            mealy.transitions[state][symbol] = {
+                state: nextState,
+                output: output
+            };
+
+        });
+
+    });
+
+
+    currentMealy = mealy;
+
+    renderMealyTable(mealy);
+
+    renderMealyDiagram(mealy);
+
+    if (conversionNote) {
+
+        conversionNote.style.display = "block";
+
+        conversionNote.innerHTML = `
+            <strong>Conversion completed:</strong>
+            In a Mealy machine, the output is attached
+            to the transition. Therefore, for every Moore
+            transition, the output of the destination state
+            is used.
+        `;
+    }
+
+
+    if (summary) {
+
+        summary.innerHTML = `
+            <p>
+                <strong>Conversion successful.</strong>
+            </p>
+
+            <p>
+                States: ${machine.states.length}
+                &nbsp; | &nbsp;
+                Input Symbols: ${machine.symbols.length}
+            </p>
+
+            <p>
+                Start State:
+                <strong>${escapeHTML(machine.start)}</strong>
+            </p>
+
+            <p>
+                The Moore machine has been converted into
+                an equivalent Mealy machine.
+            </p>
+        `;
+    }
 }
 
-function resetApp() {
-  $('states').value = '';
-  $('symbols').value = '';
-  $('start').value = '';
-  $('outputs').value = '';
-  $('transitions').value = '';
-  machine = null;
-  ['moore-table','moore-diagram','convert','mealy-table','mealy-diagram'].forEach(hide);
-  ['mooreTable','mooreDiagram','mealyTable','mealyDiagram'].forEach(id => $(id).innerHTML = '');
-  $('conversionNote').textContent = '';
-  $('summary').textContent = '';
-  hide('error');
-  markFlow(1);
-  $('input').scrollIntoView({ behavior: 'smooth' });
+
+/* =========================
+   MEALY TABLE
+   ========================= */
+
+function renderMealyTable(machine) {
+
+    let html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>State</th>
+    `;
+
+
+    machine.symbols.forEach(symbol => {
+
+        html += `
+            <th>
+                Input ${escapeHTML(symbol)}
+            </th>
+        `;
+
+    });
+
+
+    html += `
+                </tr>
+            </thead>
+
+            <tbody>
+    `;
+
+
+    machine.states.forEach(state => {
+
+        html += `
+            <tr>
+                <td>
+                    <strong>${escapeHTML(state)}</strong>
+                </td>
+        `;
+
+
+        machine.symbols.forEach(symbol => {
+
+            const transition =
+                machine.transitions[state][symbol];
+
+            html += `
+                <td>
+                    ${escapeHTML(transition.state)}
+                    /
+                    ${escapeHTML(transition.output)}
+                </td>
+            `;
+
+        });
+
+
+        html += `
+            </tr>
+        `;
+
+    });
+
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    mealyTable.innerHTML = html;
 }
 
-$('generate').addEventListener('click', generate);
-$('convertBtn').addEventListener('click', convert);
-$('sample').addEventListener('click', fillSample);
-$('reset').addEventListener('click', resetApp);
 
-// Make the demo immediately usable on first open.
-generate();
+/* =========================
+   MOORE DIAGRAM
+   ========================= */
+
+function renderMooreDiagram(machine) {
+
+    const width = 850;
+
+    const rowHeight = 120;
+
+    const height =
+        Math.max(
+            350,
+            machine.states.length * rowHeight
+        );
+
+
+    const centerX = width / 2;
+
+
+    let svg = `
+        <svg
+            width="${width}"
+            height="${height}"
+            viewBox="0 0 ${width} ${height}"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+
+        <defs>
+
+            <marker
+                id="arrowMoore"
+                markerWidth="10"
+                markerHeight="10"
+                refX="9"
+                refY="3"
+                orient="auto"
+            >
+                <path
+                    d="M0,0 L0,6 L9,3 z"
+                    fill="#2563eb"
+                />
+            </marker>
+
+        </defs>
+    `;
+
+
+    const positions = {};
+
+
+    machine.states.forEach(
+        (state, index) => {
+
+            positions[state] = {
+                x: centerX,
+                y: 70 + index * rowHeight
+            };
+
+        }
+    );
+
+
+    /* Transitions */
+
+    machine.states.forEach(state => {
+
+        const from =
+            positions[state];
+
+
+        machine.symbols.forEach(symbol => {
+
+            const destination =
+                machine.transitions[state][symbol];
+
+            const to =
+                positions[destination];
+
+
+            if (!to) {
+                return;
+            }
+
+
+            if (state === destination) {
+
+                svg += `
+                    <path
+                        d="
+                            M ${from.x - 25}
+                              ${from.y - 25}
+
+                            C ${from.x - 85}
+                              ${from.y - 90},
+
+                              ${from.x + 85}
+                              ${from.y - 90},
+
+                              ${from.x + 25}
+                              ${from.y - 25}
+                        "
+                        fill="none"
+                        stroke="#2563eb"
+                        stroke-width="2"
+                        marker-end="url(#arrowMoore)"
+                    />
+
+                    <text
+                        x="${from.x}"
+                        y="${from.y - 72}"
+                        text-anchor="middle"
+                        fill="#374151"
+                        font-size="14"
+                    >
+                        ${escapeHTML(symbol)}
+                    </text>
+                `;
+
+            } else {
+
+                const midX =
+                    (from.x + to.x) / 2;
+
+                const midY =
+                    (from.y + to.y) / 2;
+
+
+                svg += `
+                    <line
+                        x1="${from.x}"
+                        y1="${from.y + 32}"
+                        x2="${to.x}"
+                        y2="${to.y - 32}"
+                        stroke="#2563eb"
+                        stroke-width="2"
+                        marker-end="url(#arrowMoore)"
+                    />
+
+                    <text
+                        x="${midX + 10}"
+                        y="${midY}"
+                        fill="#374151"
+                        font-size="14"
+                    >
+                        ${escapeHTML(symbol)}
+                    </text>
+                `;
+
+            }
+
+        });
+
+    });
+
+
+    /* States */
+
+    machine.states.forEach(state => {
+
+        const position =
+            positions[state];
+
+        const isStart =
+            state === machine.start;
+
+
+        if (isStart) {
+
+            svg += `
+                <line
+                    x1="${position.x - 90}"
+                    y1="${position.y}"
+                    x2="${position.x - 35}"
+                    y2="${position.y}"
+                    stroke="#2563eb"
+                    stroke-width="2"
+                    marker-end="url(#arrowMoore)"
+                />
+            `;
+
+        }
+
+
+        svg += `
+            <circle
+                cx="${position.x}"
+                cy="${position.y}"
+                r="35"
+                fill="#ffffff"
+                stroke="#2563eb"
+                stroke-width="3"
+            />
+
+            <text
+                x="${position.x}"
+                y="${position.y - 3}"
+                text-anchor="middle"
+                fill="#111827"
+                font-size="15"
+                font-weight="bold"
+            >
+                ${escapeHTML(state)}
+            </text>
+
+            <text
+                x="${position.x}"
+                y="${position.y + 17}"
+                text-anchor="middle"
+                fill="#2563eb"
+                font-size="13"
+            >
+                / ${escapeHTML(machine.outputs[state])}
+            </text>
+        `;
+
+    });
+
+
+    svg += `
+        </svg>
+    `;
+
+    mooreDiagram.innerHTML = svg;
+}
+
+
+/* =========================
+   MEALY DIAGRAM
+   ========================= */
+
+function renderMealyDiagram(machine) {
+
+    const width = 850;
+
+    const rowHeight = 120;
+
+    const height =
+        Math.max(
+            350,
+            machine.states.length * rowHeight
+        );
+
+
+    const centerX = width / 2;
+
+
+    let svg = `
+        <svg
+            width="${width}"
+            height="${height}"
+            viewBox="0 0 ${width} ${height}"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+
+        <defs>
+
+            <marker
+                id="arrowMealy"
+                markerWidth="10"
+                markerHeight="10"
+                refX="9"
+                refY="3"
+                orient="auto"
+            >
+                <path
+                    d="M0,0 L0,6 L9,3 z"
+                    fill="#16a34a"
+                />
+            </marker>
+
+        </defs>
+    `;
+
+
+    const positions = {};
+
+
+    machine.states.forEach(
+        (state, index) => {
+
+            positions[state] = {
+                x: centerX,
+                y: 70 + index * rowHeight
+            };
+
+        }
+    );
+
+
+    /* Transitions */
+
+    machine.states.forEach(state => {
+
+        const from =
+            positions[state];
+
+
+        machine.symbols.forEach(symbol => {
+
+            const transition =
+                machine.transitions[state][symbol];
+
+            const destination =
+                transition.state;
+
+            const to =
+                positions[destination];
+
+
+            if (!to) {
+                return;
+            }
+
+
+            const label =
+                `${symbol} / ${transition.output}`;
+
+
+            if (state === destination) {
+
+                svg += `
+                    <path
+                        d="
+                            M ${from.x - 25}
+                              ${from.y - 25}
+
+                            C ${from.x - 85}
+                              ${from.y - 90},
+
+                              ${from.x + 85}
+                              ${from.y - 90},
+
+                              ${from.x + 25}
+                              ${from.y - 25}
+                        "
+                        fill="none"
+                        stroke="#16a34a"
+                        stroke-width="2"
+                        marker-end="url(#arrowMealy)"
+                    />
+
+                    <text
+                        x="${from.x}"
+                        y="${from.y - 72}"
+                        text-anchor="middle"
+                        fill="#166534"
+                        font-size="14"
+                        font-weight="600"
+                    >
+                        ${escapeHTML(label)}
+                    </text>
+                `;
+
+            } else {
+
+                const midX =
+                    (from.x + to.x) / 2;
+
+                const midY =
+                    (from.y + to.y) / 2;
+
+
+                svg += `
+                    <line
+                        x1="${from.x}"
+                        y1="${from.y + 35}"
+                        x2="${to.x}"
+                        y2="${to.y - 35}"
+                        stroke="#16a34a"
+                        stroke-width="2"
+                        marker-end="url(#arrowMealy)"
+                    />
+
+                    <text
+                        x="${midX + 12}"
+                        y="${midY}"
+                        fill="#166534"
+                        font-size="14"
+                        font-weight="600"
+                    >
+                        ${escapeHTML(label)}
+                    </text>
+                `;
+
+            }
+
+        });
+
+    });
+
+
+    /* States */
+
+    machine.states.forEach(state => {
+
+        const position =
+            positions[state];
+
+
+        if (state === machine.start) {
+
+            svg += `
+                <line
+                    x1="${position.x - 90}"
+                    y1="${position.y}"
+                    x2="${position.x - 35}"
+                    y2="${position.y}"
+                    stroke="#16a34a"
+                    stroke-width="2"
+                    marker-end="url(#arrowMealy)"
+                />
+            `;
+
+        }
+
+
+        svg += `
+            <circle
+                cx="${position.x}"
+                cy="${position.y}"
+                r="35"
+                fill="#ffffff"
+                stroke="#16a34a"
+                stroke-width="3"
+            />
+
+            <text
+                x="${position.x}"
+                y="${position.y + 5}"
+                text-anchor="middle"
+                fill="#111827"
+                font-size="15"
+                font-weight="bold"
+            >
+                ${escapeHTML(state)}
+            </text>
+        `;
+
+    });
+
+
+    svg += `
+        </svg>
+    `;
+
+
+    mealyDiagram.innerHTML = svg;
+}
+
+
+/* =========================
+   ESCAPE HTML
+   ========================= */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/* =========================
+   LOAD SAMPLE
+   ========================= */
+
+function loadSample() {
+
+    statesInput.value =
+        SAMPLE.states.join(",");
+
+    symbolsInput.value =
+        SAMPLE.symbols.join(",");
+
+    startInput.value =
+        SAMPLE.start;
+
+
+    outputsInput.value =
+        Object.entries(SAMPLE.outputs)
+            .map(
+                ([state, output]) =>
+                    `${state}=${output}`
+            )
+            .join(",");
+
+
+    const lines = [];
+
+    SAMPLE.states.forEach(state => {
+
+        SAMPLE.symbols.forEach(symbol => {
+
+            lines.push(
+                `${state},${symbol},${SAMPLE.transitions[state][symbol]}`
+            );
+
+        });
+
+    });
+
+
+    transitionsInput.value =
+        lines.join("\n");
+
+
+    generate();
+}
+
+
+/* =========================
+   RESET
+   ========================= */
+
+function resetMachine() {
+
+    statesInput.value = "";
+
+    symbolsInput.value = "";
+
+    startInput.value = "";
+
+    outputsInput.value = "";
+
+    transitionsInput.value = "";
+
+    currentMachine = null;
+
+    currentMealy = null;
+
+    hideError();
+
+
+    mooreTable.innerHTML = `
+        <p class="placeholder">
+            Generate the Moore machine to view the table.
+        </p>
+    `;
+
+
+    mooreDiagram.innerHTML = `
+        <p class="placeholder">
+            Generate the Moore machine to view the diagram.
+        </p>
+    `;
+
+
+    mealyTable.innerHTML = `
+        <p class="placeholder">
+            Convert the Moore machine to view the Mealy table.
+        </p>
+    `;
+
+
+    mealyDiagram.innerHTML = `
+        <p class="placeholder">
+            Convert the Moore machine to view the Mealy diagram.
+        </p>
+    `;
+
+
+    if (conversionNote) {
+
+        conversionNote.style.display =
+            "none";
+
+        conversionNote.innerHTML = "";
+
+    }
+
+
+    if (summary) {
+
+        summary.innerHTML = `
+            <p>
+                Enter a Moore machine and click
+                <strong>Generate Moore Machine</strong>.
+            </p>
+        `;
+
+    }
+
+}
+
+
+/* =========================
+   BUTTON EVENTS
+   ========================= */
+
+if (generateBtn) {
+
+    generateBtn.addEventListener(
+        "click",
+        generate
+    );
+
+}
+
+
+if (convertBtn) {
+
+    convertBtn.addEventListener(
+        "click",
+        convertToMealy
+    );
+
+}
+
+
+if (sampleBtn) {
+
+    sampleBtn.addEventListener(
+        "click",
+        loadSample
+    );
+
+}
+
+
+if (resetBtn) {
+
+    resetBtn.addEventListener(
+        "click",
+        resetMachine
+    );
+
+}
+
+
+/* =========================
+   PWA SERVICE WORKER
+   ========================= */
+
+if ("serviceWorker" in navigator) {
+
+    window.addEventListener(
+        "load",
+        function () {
+
+            navigator.serviceWorker
+                .register("sw.js")
+                .then(function () {
+
+                    console.log(
+                        "Service Worker registered successfully."
+                    );
+
+                })
+                .catch(function (error) {
+
+                    console.log(
+                        "Service Worker registration failed:",
+                        error
+                    );
+
+                });
+
+        }
+    );
+
+}
+
+
+/* =========================
+   PWA INSTALL BUTTON
+   ========================= */
+
+let deferredPrompt = null;
+
+const installBtn =
+    document.getElementById("installBtn");
+
+
+window.addEventListener(
+    "beforeinstallprompt",
+    function (event) {
+
+        event.preventDefault();
+
+        deferredPrompt = event;
+
+
+        if (installBtn) {
+
+            installBtn.style.display =
+                "inline-block";
+
+        }
+
+    }
+);
+
+
+if (installBtn) {
+
+    installBtn.addEventListener(
+        "click",
+        async function () {
+
+            if (!deferredPrompt) {
+
+                alert(
+                    "Install option is not available yet. Please open the website in Chrome or Edge."
+                );
+
+                return;
+            }
+
+
+            deferredPrompt.prompt();
+
+
+            const result =
+                await deferredPrompt.userChoice;
+
+
+            if (
+                result.outcome === "accepted"
+            ) {
+
+                installBtn.style.display =
+                    "none";
+
+            }
+
+
+            deferredPrompt = null;
+
+        }
+    );
+
+}
+
+
+window.addEventListener(
+    "appinstalled",
+    function () {
+
+        if (installBtn) {
+
+            installBtn.style.display =
+                "none";
+
+        }
+
+        console.log(
+            "Moore to Mealy Converter installed successfully."
+        );
+
+    }
+);
+
+
+/* =========================
+   INITIAL SAMPLE
+   ========================= */
+
+window.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        loadSample();
+
+    }
+);
