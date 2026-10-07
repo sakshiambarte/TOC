@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#2563eb"><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#2563eb"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="/TOC/manifest.json"><link rel="stylesheet" href="style.css">
 <title>Moore to Mealy Converter</title>
 </head>
 <body>
@@ -39,6 +39,18 @@ q2,1,q1</textarea></label>
 let deferredInstallPrompt = null;
 const installBtn = document.getElementById('installBtn');
 
+function showInstallHelp() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  if (isIOS) {
+    alert('To install: tap Share in Safari, then choose “Add to Home Screen”.');
+  } else if (isAndroid) {
+    alert('If the install window did not open, tap Chrome menu (⋮) and choose “Install app” or “Add to Home screen”.');
+  } else {
+    alert('If the install window did not open, use the browser menu and choose “Install Moore to Mealy Converter” or “Install app”. Make sure the site is opened from GitHub Pages (HTTPS), not from a local file.');
+  }
+}
+
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
   deferredInstallPrompt = event;
@@ -47,17 +59,13 @@ window.addEventListener('beforeinstallprompt', (event) => {
 
 installBtn.addEventListener('click', async () => {
   if (!deferredInstallPrompt) {
-    alert('The install prompt is not available yet. Please open this site in Chrome or Edge over HTTPS and try again.');
+    showInstallHelp();
     return;
   }
 
   deferredInstallPrompt.prompt();
   const result = await deferredInstallPrompt.userChoice;
-
-  if (result.outcome === 'accepted') {
-    installBtn.classList.add('hidden');
-  }
-
+  if (result.outcome === 'accepted') installBtn.classList.add('hidden');
   deferredInstallPrompt = null;
 });
 
@@ -68,7 +76,7 @@ window.addEventListener('appinstalled', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(console.error);
+    navigator.serviceWorker.register('/TOC/sw.js', { scope: '/TOC/' }).catch(console.error);
   });
 }
 </script>
