@@ -1,7 +1,8 @@
-const CACHE = 'moore-mealy-v2';
+const CACHE = 'moore-mealy-toc-v4';
+const BASE = '/TOC/';
 const ASSETS = [
-  './', './index.html', './style.css', './script.js', './manifest.json',
-  './icons/icon-192.png', './icons/icon-512.png'
+  BASE, BASE + 'index.html', BASE + 'style.css', BASE + 'script.js', BASE + 'manifest.json',
+  BASE + 'icons/icon-192.png', BASE + 'icons/icon-512.png'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -15,5 +16,5 @@ self.addEventListener('fetch', event => {
     const copy = response.clone();
     caches.open(CACHE).then(cache => cache.put(event.request, copy));
     return response;
-  }).catch(() => caches.match('./index.html'))));
+  }).catch(() => caches.match(BASE + 'index.html'))));
 });
